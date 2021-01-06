@@ -25,16 +25,16 @@ config_topo () {
   (sudo ip link add vpp type veth peer name swanif
   sudo ip link set dev vpp up
 
-  sudo ip netns add serverns
-  sudo ip link add veth_server type veth peer name server
-  sudo ip link set dev server up
-  sudo ip link set dev veth_server up netns serverns
+  sudo ip netns add ns
+  sudo ip link add veth_priv type veth peer name priv
+  sudo ip link set dev priv up
+  sudo ip link set dev veth_priv up netns ns
 
-  sudo ip netns exec serverns \
+  sudo ip netns exec ns \
 	bash -c "
 		ip link set dev lo up
-		ip addr add 192.168.3.2/24 dev veth_server
-		ip addr add fec3::2/16 dev veth_server
+		ip addr add 192.168.3.2/24 dev veth_priv
+		ip addr add fec3::2/16 dev veth_priv
                 ip route add 192.168.5.0/24 via 192.168.3.1
                 ip route add fec5::0/16 via fec3::1
                 ") &> /dev/null
@@ -56,17 +56,19 @@ config_topo () {
   echo "vpp started.."
   sleep 3
 
-  echo "exec $STARTUP_DIR/configs/$TC_DIR/responder.conf"
-  sudo $VPPCTL -s /tmp/vpp_sswan.sock exec $STARTUP_DIR/configs/$TC_DIR/responder.conf
+  echo "exec $STARTUP_DIR/configs/$TC_DIR/vpp.conf"
+  sudo $VPPCTL -s /tmp/vpp_sswan.sock exec $STARTUP_DIR/configs/$TC_DIR/vpp.conf
   sleep 3
+}
 
+initiate_from_sswan () {
   echo "start initiation.."
   sudo docker exec sswan ipsec up initiator
   sleep 1
 }
 
 test_ping() {
-  sudo ip netns exec serverns ping -c 1 192.168.5.2
+  sudo ip netns exec ns ping -c 1 192.168.5.2
   rc=$?
   if [ $rc -ne 0 ] ; then
     echo "Test failed!"
@@ -79,11 +81,27 @@ test_ping() {
 unconf_topo () {
   docker stop sswan &> /dev/null
   sudo pkill vpp
-  sudo ip netns delete serverns
+  sudo ip netns delete ns
+  sleep 2
 }
 
-run_test() {
-  unconf_topo
+initiate_from_vpp () {
+  sudo $VPPCTL -s /tmp/vpp_sswan.sock ikev2 initiate sa-init pr1
+  sleep 2
+}
+
+#vpp as an responder
+run_responder_test() {
   config_topo
+  initiate_from_sswan
   test_ping
+  unconf_topo
+}
+
+# vpp as an initiator
+run_initiator_test() {
+  config_topo
+  initiate_from_vpp
+  test_ping
+  unconf_topo
 }

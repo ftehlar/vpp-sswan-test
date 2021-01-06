@@ -2,4 +2,4 @@
 
 TC_DIR=responder_nat
 
-run_test
+run_responder_test
