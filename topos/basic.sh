@@ -13,6 +13,10 @@ start_vpp() {
         plugins { plugin dpdk_plugin.so { disable } }
 }
 
+vppctl () {
+  sudo $VPPCTL -s /tmp/vpp_sswan.sock $@
+}
+
 initiator_conf() {
   sudo rm -r $SSWAN_CFG_DIR
   sudo mkdir -p $SSWAN_CFG_DIR
@@ -57,7 +61,7 @@ config_topo () {
   sleep 3
 
   echo "exec $STARTUP_DIR/configs/$TC_DIR/vpp.conf"
-  sudo $VPPCTL -s /tmp/vpp_sswan.sock exec $STARTUP_DIR/configs/$TC_DIR/vpp.conf
+  vppctl exec $STARTUP_DIR/configs/$TC_DIR/vpp.conf
   sleep 3
 }
 
@@ -86,7 +90,7 @@ unconf_topo () {
 }
 
 initiate_from_vpp () {
-  sudo $VPPCTL -s /tmp/vpp_sswan.sock ikev2 initiate sa-init pr1
+  vppctl ikev2 initiate sa-init pr1
   sleep 2
 }
 
