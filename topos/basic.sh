@@ -78,8 +78,8 @@ test_ping() {
     echo "Test failed!"
   else
     echo "Test passed."
-    test_result=0
   fi
+  return $rc
 }
 
 unconf_topo () {
