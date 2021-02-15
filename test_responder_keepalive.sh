@@ -2,6 +2,11 @@
 
 TC_DIR=responder_keepalive
 
-run_responder_test
+config_topo
+initiate_from_sswan
+
+test_ping
 sleep 30
 test_ping
+
+unconf_topo
