@@ -99,7 +99,9 @@ run_responder_test() {
   config_topo
   initiate_from_sswan
   test_ping
+  rc=$?
   unconf_topo
+  return ${rc}
 }
 
 # vpp as an initiator
@@ -107,5 +109,7 @@ run_initiator_test() {
   config_topo
   initiate_from_vpp
   test_ping
+  rc=$?
   unconf_topo
+  return ${rc}
 }
